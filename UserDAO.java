@@ -1,11 +1,8 @@
-package Management.prof;
+package Management;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.sql.*;
-
-import static Management.prof.ProfForm.table;
-import static Management.prof.ProfForm.tableModel;
 
 public class UserDAO {
 
@@ -43,7 +40,7 @@ public class UserDAO {
                 String deptName = resultSet.getString("deptName");
                 String majorName = resultSet.getString("majorName");
 
-                tableModel.addRow(new Object[]{deptCode, deptName, majorName});
+                DeptForm.tableModel.addRow(new Object[]{deptCode, deptName, majorName});
             }
             // PreparedStatement와 ResultSet를 닫습니다.
             preparedStatement.close();
@@ -72,7 +69,36 @@ public class UserDAO {
                 String room = resultSet.getString("room");
                 String sex = resultSet.getString("sex");
 
-                tableModel.addRow(new Object[]{profCode, profName, addr, rrn, phone, year, degree, majorName, room, sex});
+                ProfForm.tableModel.addRow(new Object[]{profCode, profName, addr, rrn, phone, year, degree, majorName, room, sex});
+            }
+            // PreparedStatement와 ResultSet를 닫습니다.
+            preparedStatement.close();
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void studentInfoAll() {
+        try {
+            String query = "SELECT * FROM student ";
+            PreparedStatement preparedStatement = c.prepareStatement(query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            // 결과가 있는 경우
+            while (resultSet.next()) {
+                String stnCode = resultSet.getString("stdCode");
+                String stdName = resultSet.getString("stdName");
+                String addr = resultSet.getString("addr");
+                String rrn = resultSet.getString("rrn");
+                String phone = resultSet.getString("phone");
+                String year = resultSet.getString("year");
+                String majorName = resultSet.getString("majorName");
+                String highSchool = resultSet.getString("highSchool");
+                String graduationYear = resultSet.getString("highSchoolGraduationYear");
+                String sex = resultSet.getString("sex");
+
+                StudentForm.tableModel.addRow(new Object[]{stnCode, stdName, addr, rrn, phone, majorName, year, highSchool, graduationYear, sex});
             }
             // PreparedStatement와 ResultSet를 닫습니다.
             preparedStatement.close();
@@ -101,7 +127,7 @@ public class UserDAO {
             preparedStatement.close();
 
             // 테이블 모델 초기화
-            tableModel.setRowCount(0);
+            DeptForm.tableModel.setRowCount(0);
 
             // 업데이트된 데이터로 테이블 모델 채우기
             deptInfoAll();
@@ -136,7 +162,7 @@ public class UserDAO {
             preparedStatement.close();
 
             // 테이블 모델 초기화
-            tableModel.setRowCount(0);
+            ProfForm.tableModel.setRowCount(0);
 
             // 업데이트된 데이터로 테이블 모델 채우기
             profInfoAll();
@@ -146,8 +172,47 @@ public class UserDAO {
         }
     }
 
+    public void studentDataInsert(String stnCode,String  stdName,String addr,String rrn, String phone, String majorName, String year, String highSchool,String  graduationYear, String sex) {
+        try {
+            String query = "INSERT INTO student (stdCode, stdName, addr, rrn, phone, year, majorName, highSchool, highSchoolGraduationYear, sex) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            PreparedStatement preparedStatement = c.prepareStatement(query);
+            preparedStatement.setString(1, stnCode);
+            preparedStatement.setString(2, stdName);
+            preparedStatement.setString(3, addr);
+            preparedStatement.setString(4, rrn);
+            preparedStatement.setString(5, phone);
+            preparedStatement.setString(6, year);
+            preparedStatement.setString(7, majorName);
+            preparedStatement.setString(8, highSchool);
+            preparedStatement.setString(9, graduationYear);
+            preparedStatement.setString(10, sex);
+
+            int rowsInserted = preparedStatement.executeUpdate();
+
+            if (rowsInserted > 0) {
+                JOptionPane.showMessageDialog(null, "데이터가 성공적으로 삽입되었습니다.");
+            } else {
+                JOptionPane.showMessageDialog(null, "데이터 삽입 실패.");
+            }
+
+            preparedStatement.close();
+
+            // 테이블 모델 초기화
+            StudentForm.tableModel.setRowCount(0);
+
+            // 업데이트된 데이터로 테이블 모델 채우기
+            studentInfoAll();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "데이터 삽입 중 오류 발생: " + e.getMessage());
+
+            // 예외 발생 시도 데이터를 롤백하거나 다른 조치를 취할 수 있습니다.
+        }
+    }
+
     public void categorySearchByDeptName(String deptName) {
-        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        DefaultTableModel model = (DefaultTableModel) ProfForm.table.getModel();
         model.setRowCount(0);
 
         try {
@@ -175,7 +240,7 @@ public class UserDAO {
     }
 
     public void categorySearchByProfName(String profName) {
-        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        DefaultTableModel model = (DefaultTableModel) ProfForm.table.getModel();
         model.setRowCount(0);
 
         try {
@@ -232,6 +297,45 @@ public class UserDAO {
         }
     }
 
+
+
+    public void categorySearchByStudentName(String stdName) {
+        DefaultTableModel model = (DefaultTableModel) StudentForm.table.getModel();
+        model.setRowCount(0);
+
+        try {
+            String query = "SELECT stdCode, stdName, addr, rrn, phone, year, majorName, highSchool, highSchoolGraduationYear, sex FROM student WHERE stdName like ? OR stdName = ? OR stdName like ?";
+            PreparedStatement preparedStatement = c.prepareStatement(query);
+            preparedStatement.setString(1, "%" + stdName);
+            preparedStatement.setString(2, stdName);
+            preparedStatement.setString(3, stdName + "%");
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+
+            // 결과가 있는 경우
+            while (resultSet.next()) {
+                String profCode = resultSet.getString("stdCode");
+                String foundProfName = resultSet.getString("stdName");
+                String addr = resultSet.getString("addr");
+                String rrn = resultSet.getString("rrn");
+                String phone = resultSet.getString("phone");
+                String year = resultSet.getString("year");
+                String degree = resultSet.getString("majorName");
+                String majorName = resultSet.getString("highSchool");
+                String room = resultSet.getString("highSchoolGraduationYear");
+                String sex = resultSet.getString("sex");
+
+
+                model.addRow(new Object[]{profCode, foundProfName, addr, rrn, phone, year, degree, majorName, room, sex});
+            }
+            // PreparedStatement와 ResultSet를 닫습니다.
+            preparedStatement.close();
+            resultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void updateDeptInfo(String deptCodeToUpdate, String deptNameToUpdate, String majorNameToUpdate) {
         try {
             // SQL UPDATE 쿼리 작성
@@ -257,7 +361,7 @@ public class UserDAO {
             preparedStatement.close();
 
             // 테이블 모델 초기화
-            tableModel.setRowCount(0);
+            DeptForm.tableModel.setRowCount(0);
 
             // 업데이트된 데이터로 테이블 모델 채우기
             deptInfoAll();
@@ -300,10 +404,53 @@ public class UserDAO {
             preparedStatement.close();
 
             // 테이블 모델 초기화
-            tableModel.setRowCount(0);
+            ProfForm.tableModel.setRowCount(0);
 
             // 업데이트된 데이터로 테이블 모델 채우기
             profInfoAll();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "데이터 업데이트 중 오류 발생: " + e.getMessage());
+        }
+    }
+
+    public void updateStudentInfo(String stnCode, String  stdName,String addr,String rrn, String phone, String year, String majorName, String highSchool,String  graduationYear, String sex) {
+        try {
+            // SQL UPDATE 쿼리 작성
+            String query = "UPDATE student SET stdCode = ?, stdName = ?, addr = ?, rrn = ?, phone = ?, year = ?, majorName = ?, highSchool = ?, highSchoolGraduationYear = ?, sex = ? WHERE stdCode = ?";
+
+            PreparedStatement preparedStatement = c.prepareStatement(query);
+
+            // 파라미터 설정
+            preparedStatement.setString(1, stnCode);
+            preparedStatement.setString(2, stdName);
+            preparedStatement.setString(3, addr);
+            preparedStatement.setString(4, rrn);
+            preparedStatement.setString(5, phone);
+            preparedStatement.setString(6, year);
+            preparedStatement.setString(7, majorName);
+            preparedStatement.setString(8, highSchool);
+            preparedStatement.setString(9, graduationYear);
+            preparedStatement.setString(10, sex);
+            preparedStatement.setString(11, stnCode);
+
+            // UPDATE 쿼리 실행
+            int updatedRows = preparedStatement.executeUpdate();
+
+            if (updatedRows > 0) {
+                JOptionPane.showMessageDialog(null, "데이터가 성공적으로 업데이트되었습니다.");
+            } else {
+                JOptionPane.showMessageDialog(null, "업데이트할 데이터가 없습니다.");
+            }
+
+            // PreparedStatement와 연결 닫기
+            preparedStatement.close();
+
+            // 테이블 모델 초기화
+            StudentForm.tableModel.setRowCount(0);
+
+            // 업데이트된 데이터로 테이블 모델 채우기
+            studentInfoAll();
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "데이터 업데이트 중 오류 발생: " + e.getMessage());
@@ -335,7 +482,7 @@ public class UserDAO {
             // PreparedStatement와 연결 닫기
             preparedStatement.close();
 
-            tableModel.setRowCount(0);
+            DeptForm.tableModel.setRowCount(0);
 
             // 업데이트된 데이터로 테이블 모델 채우기
             deptInfoAll();
@@ -372,7 +519,7 @@ public class UserDAO {
                 // PreparedStatement와 연결 닫기
                 preparedStatement.close();
 
-                tableModel.setRowCount(0);
+                DeptForm.tableModel.setRowCount(0);
 
                 // 업데이트된 데이터로 테이블 모델 채우기
                 profInfoAll();
@@ -383,6 +530,92 @@ public class UserDAO {
                 ;
             }
         }
+
+    public void deleteStudentInfo (String stdCode, String stdName, String phone) {
+        try {
+            // SQL DELETE 쿼리 작성
+            String deleteQuery = "DELETE FROM student WHERE stdCode = ? AND stdName = ? AND phone = ?";
+
+            PreparedStatement preparedStatement = c.prepareStatement(deleteQuery);
+
+            // 파라미터 설정
+            preparedStatement.setString(1, stdCode);
+            preparedStatement.setString(2, stdName);
+            preparedStatement.setString(3, phone);
+
+            // DELETE 쿼리 실행
+            int deletedRows = preparedStatement.executeUpdate();
+
+            if (deletedRows > 0) {
+                JOptionPane.showMessageDialog(null, "데이터가 성공적으로 삭제되었습니다.");
+            } else {
+                JOptionPane.showMessageDialog(null, "삭제할 데이터가 없습니다.");
+                ;
+            }
+
+            // PreparedStatement와 연결 닫기
+            preparedStatement.close();
+
+            StudentForm.tableModel.setRowCount(0);
+
+            // 업데이트된 데이터로 테이블 모델 채우기
+            studentInfoAll();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "데이터 삭제 중 오류 발생: " + e.getMessage());
+            ;
+        }
+    }
+
+    public int login(String userID, String userPassword) {
+        String SQL = "SELECT userPassword FROM user WHERE userID = ?"; // 각 ID에 해당하는 비밀번호 조회
+
+        try {
+            ps = c.prepareStatement(SQL);
+            ps.setString(1, userID); // 위  ?에 적용할 ID
+            rs = ps.executeQuery(); // 쿼리 실행 결과를 객체에 저장
+
+            if (rs.next()) {
+                if (rs.getString(1).equals(userPassword)) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+            return -1;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -2;
+    }
+
+    public String getFoundAccountInfo(String insertedName, String insertedPhone) {
+        String accountInfo = "";
+
+        try {
+            String query = "SELECT userID, userPassword FROM user WHERE userName = ? AND userPhone = ?";
+            PreparedStatement preparedStatement = c.prepareStatement(query);
+            preparedStatement.setString(1, insertedName); // foundName은 일치하는 이름
+            preparedStatement.setString(2, insertedPhone); // foundPhone은 일치하는 전화번호
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            // 결과를 문자열로 포맷
+            while (resultSet.next()) {
+                String userID = resultSet.getString("userID"); // userID로 수정
+                String userPassword = resultSet.getString("userPassword");
+
+                accountInfo += "계정 아이디: " + userID + "\n"; // userID 사용
+                accountInfo += "비밀번호: " + userPassword + "\n";
+            }
+
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return accountInfo;
+    }
 
 
 
